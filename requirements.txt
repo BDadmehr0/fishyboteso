@@ -19,3 +19,4 @@ mss
 typing
 pyxdg
 Xlib
+python-xlib
