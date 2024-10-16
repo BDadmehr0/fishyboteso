@@ -7,7 +7,9 @@ include fishy/icon.png
 include fishy/fishybot_logo.png
 include fishy/sound.mp3
 include fishy/beep.wav
+include fishy/icon.png
 include install.sh
+
 
 
 recursive-include tests *
