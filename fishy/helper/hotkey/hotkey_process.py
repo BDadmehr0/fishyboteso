@@ -1,6 +1,5 @@
 import logging
 import time
-from multiprocessing import Process, Queue
 from threading import Thread
 from typing import Dict, Optional, Callable
 
@@ -11,7 +10,6 @@ from fishy.helper.hotkey import process
 from fishy.helper.hotkey.process import Key
 
 
-# noinspection PyPep8Naming
 class hotkey:
     instance: 'HotKey' = None
 
@@ -39,12 +37,9 @@ class hotkey:
 
 class HotKey:
     def __init__(self):
-        self.inq = Queue()
-        self.outq = Queue()
-
         self._hotkeys: Dict[Key, Optional[Callable]] = dict([(k, None) for k in Key])
-
-        self.process = Process(target=process.run, args=(self.inq, self.outq))
+        self.running = True
+        self.process = Thread(target=process.run, args=(self._hotkeys,))
         self.event = Thread(target=self._event_loop)
 
     def hook(self, key: Key, func: Callable):
@@ -54,18 +49,13 @@ class HotKey:
         self._hotkeys[key] = None
 
     def _event_loop(self):
-        while True:
-            key = self.outq.get()
-
-            if key == "stop":
-                break
-
+        while self.running:
+            key = process.get_next_key()
             if key in Key:
                 callback = self._hotkeys[key]
                 if callback:
                     playsound(helper.manifest_file("beep.wav"), False)
                     callback()
-
             time.sleep(0.1)
 
     def start(self):
@@ -74,8 +64,7 @@ class HotKey:
         logging.debug("hotkey process started")
 
     def stop(self):
-        self.inq.put("stop")
-        self.outq.put("stop")
+        self.running = False
         self.process.join()
         self.event.join()
         logging.debug("hotkey process ended")
