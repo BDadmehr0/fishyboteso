@@ -5,26 +5,26 @@ Saves configuration in file as json file
 import json
 import logging
 import os
-# path to save the configuration file
+import platform
 from typing import Optional
-
 from event_scheduler import EventScheduler
 from fishy.osservices.os_services import os_services
 
-
 def filename():
     name = "fishy_config.json"
-    _filename = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"], "Documents", name)
+    _filename = os.path.join(os.environ.get("HOMEDRIVE", ""), os.environ.get("HOMEPATH", ""), "Documents", name)
     if os.path.exists(_filename):
         return _filename
         
-    # fallback for onedrive documents
     return os.path.join(os_services.get_documents_path(), name)
 
-temp_file = os.path.join(os.getenv("TMPDIR", "/tmp"), "fishy_config.BAK")
+# Determine temp file location based on OS
+if platform.system() == "Windows":
+    temp_file = os.path.join(os.environ.get("TEMP", ""), "fishy_config.BAK")
+else:
+    temp_file = os.path.join(os.getenv("TMPDIR", "/tmp"), "fishy_config.BAK")
 
 class Config:
-
     def __init__(self):
         self._config_dict: Optional[dict] = None
         self._scheduler: Optional[EventScheduler] = None
@@ -41,19 +41,19 @@ class Config:
     def initialize(self):
         self._scheduler = EventScheduler()
         if os.path.exists(filename()):
-
             try:
-                self._config_dict = json.loads(open(filename()).read())
+                with open(filename()) as f:
+                    self._config_dict = json.load(f)
             except json.JSONDecodeError:
                 try:
                     logging.warning("Config file got corrupted, trying to restore backup")
-                    self._config_dict = json.loads(open(temp_file).read())
+                    with open(temp_file) as f:
+                        self._config_dict = json.load(f)
                     self.save_config()
                 except (FileNotFoundError, json.JSONDecodeError):
-                    logging.warning("couldn't restore, creating new")
+                    logging.warning("Couldn't restore, creating new")
                     os.remove(filename())
                     self._config_dict = dict()
-
         else:
             self._config_dict = dict()
         logging.debug("config initialized")
@@ -74,21 +74,13 @@ class Config:
         logging.debug("created backup")
 
     def _sort_dict(self):
-        tmpdict = dict()
-        for key in sorted(self._config_dict.keys()):
-            tmpdict[key] = self._config_dict[key]
-        self._config_dict = tmpdict
+        self._config_dict = dict(sorted(self._config_dict.items()))
 
     def save_config(self):
-        """
-        save the cache to the file
-        """
         self._sort_dict()
         with open(filename(), 'w') as f:
             f.write(json.dumps(self._config_dict))
 
-
-# noinspection PyPep8Naming
 class config:
     _instance = None
 
@@ -108,23 +100,10 @@ class config:
 
     @staticmethod
     def get(key, default=None):
-        """
-        gets a value from  configuration,
-        if it is not found, return the default configuration
-        :param key: key of the config
-        :param default: default value to return if key is not found
-        :return: config value
-        """
         return default if config._instance is None or config._instance[key] is None else config._instance[key]
 
     @staticmethod
     def set(key, value, save=True):
-        """
-        saves the configuration is cache (and saves it in file if needed)
-        :param key: key to save
-        :param value: value to save
-        :param save: False if don't want to save right away
-        """
         if config._instance is None:
             return
 
@@ -134,10 +113,6 @@ class config:
 
     @staticmethod
     def delete(key):
-        """
-        deletes a key from config
-        :param key: key to delete
-        """
         try:
             del config._instance[key]
             config.save_config()
