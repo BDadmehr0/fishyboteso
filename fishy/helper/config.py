@@ -17,13 +17,11 @@ def filename():
     _filename = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"], "Documents", name)
     if os.path.exists(_filename):
         return _filename
-
+        
     # fallback for onedrive documents
     return os.path.join(os_services.get_documents_path(), name)
 
-
 temp_file = os.path.join(os.getenv("TMPDIR", "/tmp"), "fishy_config.BAK")
-
 
 class Config:
 
