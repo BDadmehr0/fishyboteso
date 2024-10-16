@@ -4,6 +4,7 @@ import tkinter as tk
 from multiprocessing import Process, Queue
 from threading import Thread
 import platform
+import os
 
 from PIL import Image, ImageTk
 
@@ -34,20 +35,30 @@ class Splash:
 
         top.title("Loading...")
         top.resizable(False, False)
-        
-        if os_name == 'Linux':
-            top.iconphoto(True, tk.PhotoImage(helper.manifest_file('icon.png')))
+
+        # Use absolute path for the icon
+        icon_path = helper.manifest_file('icon.png')
+        if os.path.isfile(icon_path):
+            top.iconphoto(True, tk.PhotoImage(icon_path))
         else:
-            top.iconbitmap(helper.manifest_file('icon.ico'))
+            logging.error(f"Icon file not found: {icon_path}")
+            top.iconphoto(True, tk.PhotoImage())  # Set to a default icon if needed
+
+        # Load logo image with an absolute path
+        logo_path = helper.manifest_file('fishybot_logo.png')
+        if os.path.isfile(logo_path):
+            top.image = Image.open(logo_path).resize(dim)
+            top.image = ImageTk.PhotoImage(top.image)
+        else:
+            logging.error(f"Logo file not found: {logo_path}")
+            top.image = ImageTk.PhotoImage()  # Set to a default image if needed
 
         canvas = tk.Canvas(top, width=dim[0], height=dim[1], bg='white')
         canvas.pack()
-        top.image = Image.open(helper.manifest_file('fishybot_logo.png')).resize(dim)
-        top.image = ImageTk.PhotoImage(top.image)
+
         canvas.create_image(0, 0, anchor=tk.NW, image=top.image)
 
         # Position splash at the center of the main window
-
         default_loc = (str(top.winfo_reqwidth()) + "+" + str(top.winfo_reqheight()) + "+" + "0" + "0")
         loc = (win_loc or default_loc).split(":")[-1].split("+")[1:]
         top.geometry("{}x{}+{}+{}".format(dim[0], dim[1], int(loc[0]) + int(dim[0] / 2), int(loc[1]) + int(dim[1] / 2)))
