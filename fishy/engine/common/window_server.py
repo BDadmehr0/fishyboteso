@@ -36,13 +36,20 @@ def init():
     Finds the game window, and calculates the offset to remove the title bar
     """
     WindowServer.sslib = screenshot.create()
-    WindowServer.status = Status.RUNNING
-    WindowServer.crop = os_services.get_game_window_rect()
+    # Check if the screenshot library was successfully created
+    if WindowServer.sslib is None:
+        logging.error("Failed to create screenshot library instance")
+        WindowServer.status = Status.CRASHED
+        return
 
-    if WindowServer.crop is None or not WindowServer.sslib.setup():
+    crop = os_services.get_game_window_rect()
+    if crop is None or not WindowServer.sslib.setup():
         logging.error("Game window not found by window_server")
         WindowServer.status = Status.CRASHED
         return
+
+    WindowServer.crop = crop
+    WindowServer.status = Status.RUNNING
 
 
 def get_cropped_screenshot():

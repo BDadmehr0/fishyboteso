@@ -8,6 +8,8 @@ import os
 from subprocess import run
 # path to save the configuration file
 from typing import Optional
+import sys
+
 
 from event_scheduler import EventScheduler
 
@@ -15,17 +17,19 @@ from fishy.osservices.os_services import os_services
 
 
 def filename():
-    name = "fishy_config.json"
-    if "HOME" in os.environ:
-        _filename = os.path.join(os.environ["HOME"], "Documents", name)
+
+    if "--test-server" in sys.argv:
+        name = "fishy_config_test.json"
     else:
-        # fallback for systems without 'HOME' variable
-        _filename = os.path.join(os.path.expanduser("/root/"), "Documents", name)
-        
+        name = "fishy_config.json"
+
+    _filename = os.path.join(os.environ["HOMEDRIVE"], os.environ["HOMEPATH"], "Documents", name)
+
     if os.path.exists(_filename):
         return _filename
-    
-    # fallback for onedrive documents
+
+    # fallback for OneDrive documents
+
     return os.path.join(os_services.get_documents_path(), name)
 
 try:

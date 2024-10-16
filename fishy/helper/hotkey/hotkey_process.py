@@ -8,6 +8,7 @@ from typing import Dict, Optional, Callable
 from playsound import playsound
 
 from fishy import helper
+from fishy.helper.config import config
 from fishy.helper.hotkey import process
 from fishy.helper.hotkey.process import Key
 
@@ -64,7 +65,10 @@ class HotKey:
             if key in Key:
                 callback = self._hotkeys[key]
                 if callback:
-                    playsound(helper.manifest_file("https://raw.githubusercontent.com/fishyboteso/fishyboteso/main/fishy/beep.wav"), False)  # Added comma here
+                  
+                    if config.get("sound_notification", False):
+                        playsound(helper.manifest_file("beep.wav"), False)
+
                     callback()
 
             time.sleep(0.1)
