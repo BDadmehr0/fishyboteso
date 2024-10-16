@@ -1,7 +1,7 @@
 import subprocess
 import re
 import os
-from Xlib import *
+from Xlib import display
 from typing import Tuple, Optional
 from xdg.DesktopEntry import DesktopEntry
 
