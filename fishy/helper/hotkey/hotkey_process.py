@@ -1,19 +1,17 @@
 import logging
 import time
-# import queue
 from multiprocessing import Process, Queue
 from threading import Thread
 from typing import Dict, Optional, Callable
-
+import requests
 from playsound import playsound
+import os
 
 from fishy import helper
 from fishy.helper.config import config
 from fishy.helper.hotkey import process
 from fishy.helper.hotkey.process import Key
 
-
-# noinspection PyPep8Naming
 class hotkey:
     instance: 'HotKey' = None
 
@@ -65,13 +63,31 @@ class HotKey:
             if key in Key:
                 callback = self._hotkeys[key]
                 if callback:
-                  
                     if config.get("sound_notification", False):
-                        playsound(helper.manifest_file("beep.wav"), False)
+                        # Change here to use a web URL for the sound
+                        sound_url = "https://raw.githubusercontent.com/fishyboteso/fishyboteso/main/fishy/beep.wav"
+                        try:
+                            self.play_sound_from_url(sound_url)
+                        except Exception as e:
+                            logging.error(f"Failed to play sound from URL: {e}")
 
                     callback()
 
             time.sleep(0.1)
+
+    def play_sound_from_url(self, url: str):
+        # Download sound file from the URL
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open("temp_sound.wav", "wb") as f:
+                f.write(response.content)
+
+            playsound("temp_sound.wav")
+
+            # Clean up temporary file
+            os.remove("temp_sound.wav")
+        else:
+            logging.error(f"Failed to download sound file, status code: {response.status_code}")
 
     def start(self):
         self.process.start()
@@ -81,6 +97,4 @@ class HotKey:
     def stop(self):
         self.inq.put("stop")
         self.outq.put("stop")
-        # self.process.join()
-        # self.event.join()
         logging.debug("hotkey process ended")
