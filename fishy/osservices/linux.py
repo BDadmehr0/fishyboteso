@@ -4,19 +4,18 @@ import os
 from Xlib import display
 from typing import Tuple, Optional
 from xdg.DesktopEntry import DesktopEntry
-
 from fishy.osservices.os_services import IOSServices
 
 
 class Linux(IOSServices):
 
-    def hide_terminal():
-        window_title = "" # Window title
+    def hide_terminal(self):
+        window_title = ""  # Window title
         command = f'gsettings set org.gnome.shell.extensions.dash-to-dock intellihide-on-maximize false; \
                 wmctrl -r "{window_title}" -b add,hidden'
         subprocess.run(command, shell=True)
 
-    def create_shortcut(anti_ghosting=False):
+    def create_shortcut(self, anti_ghosting=False):
         try:
             desktop_file = os.path.expanduser("~/Desktop/Fishybot ESO.desktop")
             shortcut = DesktopEntry(desktop_file)
@@ -35,28 +34,24 @@ class Linux(IOSServices):
             print("Couldn't create shortcut")
 
     def get_documents_path(self) -> str:
-        return os .path.join(os.path.expanduser('~'), "Documents")
+        return os.path.join(os.path.expanduser('~'), "Documents")
 
     def is_admin(self) -> bool:
-        if os.geteuid() == 0:
-            return "The program is running as root"
-        else:
-            return "The program is not running as root"
+        return os.geteuid() == 0
 
-
-    def get_eso_config_path() -> str:
+    def get_eso_config_path(self) -> str:
         documents = os.path.expanduser("~/Documents")
         return os.path.join(documents, "Elder Scrolls Online")
 
     def is_eso_active(self) -> bool:
         d = display.Display()
         root = d.screen().root
-        window_id = root.get_full_property(d.intern_atom('_NET_ACTIVE_WINDOW'), X.AnyPropertyType).value[0]
+        window_id = root.get_full_property(d.intern_atom('_NET_ACTIVE_WINDOW'), display.X.AnyPropertyType).value[0]
         window = d.create_resource_object('window', window_id)
         window_name = window.get_wm_name()
         return window_name == "Elder Scrolls Online"
 
-    def get_monitor_rect():
+    def get_monitor_rect(self):
         try:
             output = subprocess.check_output(["xrandr"]).decode("utf-8")
             matches = re.findall(r"(\d+)x(\d+)\+(\d+)\+(\d+)", output)
@@ -73,12 +68,11 @@ class Linux(IOSServices):
         except subprocess.CalledProcessError:
             return None
 
-    def get_game_window_rect() -> Optional[Tuple[int, int, int, int]]:
+    def get_game_window_rect(self) -> Optional[Tuple[int, int, int, int]]:
         d = display.Display()
         root = d.screen().root
         window_id = None
 
-        # Find the window with the specified name
         window_attributes = root.query_tree().children
         for window in window_attributes:
             window_name = window.get_wm_name()
